@@ -1,0 +1,21 @@
+{
+    "name": "jackh/yii2-websocket",
+    "description": "This extension is used to create a websokcet server",
+    "type": "yii2-extension",
+    "keywords": ["yii2","extension"],
+    "license": "BSD-2-Clause",
+    "authors": [
+        {
+            "name": "Jack.Huang",
+            "email": "huangj1234548@gmail.com"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "jackh\\websocket\\": ""
+        }
+    }
+}
