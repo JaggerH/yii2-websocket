@@ -59,38 +59,22 @@ class WebSocket
             //if handshake choose the master
             foreach ($socketArr as $socket)
             {
-                if ($socket == $this->master)
-                {
+                if ($socket == $this->master) {
                     $client = socket_accept($this->master);
-                    if ($client < 0)
-                    {
+                    if ($client < 0) {
                         $this->log("socket_accept() failed");
                         continue;
                     }
-                    else
-                    {
-                        $this->connect($client);
-                    }
+                    else $this->connect($client);
                 }
-                else
-                {
+                else {
                     $this->log("----------New Frame Start-------");
                     $bytes = @socket_recv($socket,$buffer,2048,0);
-                    if ($bytes == 0)
-                    {
-                        $this->disconnect($socket);
-                    }
-                    else
-                    {
+                    if ($bytes == 0) $this->disconnect($socket); 
+                    else {
                         $user = $this->getUserBySocket($socket);
-                        if (!$user->handshake)
-                        {
-                            $this->doHandShake($user, $buffer);
-                        }
-                        else
-                        {
-                            $this->process($user, $buffer); 
-                        }
+                        if (!$user->handshake) $this->doHandShake($user, $buffer);
+                        else $this->process($user, $buffer); 
                     }
                 }
             }
@@ -184,19 +168,6 @@ class WebSocket
             
         return array($r, $h, $o, $key, $cookie);
     }
-    // public function getHeaders($request) {
-    //     $request = explode("\r\n", $request);
-    //     $headers = [];
-    //     foreach ($request as $name => $value) {
-    //         if (strncmp($name, 'HTTP_', 5) === 0) {
-    //             $name = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))));
-    //             $this->_headers->add($name, $value);
-    //             $request[]
-    //         }
-    //     }
-
-    //     return $this->_headers;
-    // }
 
     protected function unwrap($clientSocket, $msg="")
     { 
@@ -280,10 +251,8 @@ class WebSocket
     private function doHandShake($user, $buffer)
     {
         $this->log("\nRequesting handshake...");
-        // $this->log($buffer);
         list($resource, $host, $origin, $key, $cookie) = $this->getHeaders($buffer);
-        // var_dump($this->getCookies($cookie));
-        var_dump(\Yii::$app->user->identity);
+        $this->loadCookies($cookie);
         
         //websocket version 13
         $acceptKey = base64_encode(sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', true));
@@ -299,18 +268,6 @@ class WebSocket
         $this->log("Done handshaking...");
         return true;
     }
-    
-    public function getCookies($cookies_str)
-    {
-        $_cookies = null;
-        if ($_cookies === null) {
-            $_cookies = new \yii\web\CookieCollection($this->loadCookies($cookies_str), [
-                'readOnly' => true,
-            ]);
-        }
-
-        return $_cookies;
-    }
 
     public function loadCookies($cookies_str)
     {
@@ -322,25 +279,7 @@ class WebSocket
             $cookies[$n2v[0]] = urldecode($n2v[1]);
         }
 
-        foreach ($cookies as $name => $value) {
-            if (!is_string($value)) {
-                continue;
-            }
-            $data = \Yii::$app->getSecurity()->validateData($value, $this->cookieValidationKey);
-            if ($data === false) {
-                continue;
-            }
-            $data = @unserialize($data);
-            if (is_array($data) && isset($data[0], $data[1]) && $data[0] === $name) {
-                $cookies[$name] = new \yii\web\Cookie([
-                    'name' => $name,
-                    'value' => $data[1],
-                    'expire' => null,
-                ]);
-            }
-        }
-
-        return $cookies;
+        $_COOKIE = $cookies;
     }
 
     private function getUserBySocket($socket)
