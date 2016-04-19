@@ -271,6 +271,8 @@ class WebSocket {
 		list($resource, $host, $origin, $key, $cookie) = $this->getHeaders($buffer);
 		$this->loadCookies($cookie);
 		$user->id = \Yii::$app->user->getId();
+		$user->username = \Yii::$app->user->identity->username;
+		$this->log("******** userId: " . $user->username . " *********\n");
 		//websocket version 13
 		$acceptKey = base64_encode(sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', true));
 		$upgrade = "HTTP/1.1 101 Switching Protocol\r\n" .
@@ -310,12 +312,13 @@ class User {
 	var $id;
 	var $socket;
 	var $handshake;
+	var $username;
 
 	public function toJson() {
 		return json_encode([
 			"id" => $this->id,
 			"socket" => $this->socket,
-			"handshake" => $this->handshake,
+			"username" => $this->username,
 		]);
 	}
 }
