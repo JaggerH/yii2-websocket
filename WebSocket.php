@@ -50,7 +50,12 @@ class WebSocket {
 			$socketArr = $this->sockets;
 			$write = NULL;
 			$except = NULL;
-			socket_select($socketArr, $write, $except, NULL); //select the socket with message automaticly
+
+			//select the socket with message automaticly
+			if (socket_select($socketArr, $write, $except, NULL) < 1) {
+				$this->log("socket_select continue");
+				continue;
+			}
 
 			//if handshake choose the master
 			foreach ($socketArr as $socket) {
@@ -60,9 +65,9 @@ class WebSocket {
 						$this->log("socket_accept() failed");
 						continue;
 					} else {
+						$this->log("----------New User Connect-------");
 						$this->connect($client);
 					}
-
 				} else {
 					$this->log("----------New Frame Start-------");
 					$bytes = @socket_recv($socket, $buffer, 2048, 0);
@@ -75,7 +80,6 @@ class WebSocket {
 						} else {
 							$this->process($user, $buffer);
 						}
-
 					}
 				}
 			}
@@ -90,7 +94,17 @@ class WebSocket {
 	protected function process($user, $msg) {
 		$msg = $this->unwrap($user->socket, $msg);
 		$this->say('< ' . $msg);
-		$this->send($user->socket, $msg);
+		// toId, userId
+		$msg = json_decode($msg, true);
+		var_dump($msg);
+		$toId = $msg["toId"];
+		unset($msg["toId"]);
+		$msg["from"] = $user->id;
+		$toUser = $this->getUserById($toId);
+		$this->log("--------- process -----------");
+		var_dump($toId, $this->users);
+		$this->log("--------- process -----------");
+		$this->send($toUser->socket, json_encode($msg));
 	}
 
 	public function send($client, $msg) {
@@ -107,13 +121,8 @@ class WebSocket {
 	 */
 	public function connect($clientSocket) {
 		$user = new User();
-		// $user->id = uniqid();
-		$user->id = \Yii::$app->user->id;
 		$user->socket = $clientSocket;
 		array_push($this->users, $user);
-		echo 'clientSocket: ' . "\n";
-		var_dump($clientSocket);
-		var_dump('' . $clientSocket);
 		array_push($this->sockets, $clientSocket);
 		$this->log($user->socket . " CONNECTED!" . date("Y-m-d H-i-s"));
 	}
@@ -144,14 +153,19 @@ class WebSocket {
 	}
 
 	private function getUserBySocket($socket) {
-		$found = null;
 		foreach ($this->users as $user) {
 			if ($user->socket == $socket) {
-				$found = $user;
-				break;
+				return $user;
 			}
 		}
-		return $found;
+	}
+
+	private function getUserById($id) {
+		foreach ($this->users as $user) {
+			if ($user->id == $id) {
+				return $user;
+			}
+		}
 	}
 	/**
 	 *@name     getHeaders
@@ -254,22 +268,18 @@ class WebSocket {
 	}
 
 	private function doHandShake($user, $buffer) {
-		$this->log("\nRequesting handshake...");
 		list($resource, $host, $origin, $key, $cookie) = $this->getHeaders($buffer);
 		$this->loadCookies($cookie);
-
+		$user->id = \Yii::$app->user->getId();
 		//websocket version 13
 		$acceptKey = base64_encode(sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', true));
-
-		$this->log("Handshaking...");
 		$upgrade = "HTTP/1.1 101 Switching Protocol\r\n" .
 			"Upgrade: websocket\r\n" .
 			"Connection: Upgrade\r\n" .
 			"Sec-WebSocket-Accept: " . $acceptKey . "\r\n\r\n"; //必须以两个回车结尾
-		$this->log($upgrade);
 		$sent = socket_write($user->socket, $upgrade, strlen($upgrade));
 		$user->handshake = true;
-		$this->log("Done handshaking...");
+		$this->log("Done handshake...");
 		return true;
 	}
 
