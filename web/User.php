@@ -282,6 +282,7 @@ class User extends Component
     {
         // $value = Yii::$app->getRequest()->getCookies()->getValue($this->identityCookie['name']);
         $request = new \yii\web\Request;
+        $request->cookieValidationKey = '2zP9yOIsS3ZI_HuM1y4EvvMtfCtukFFL';
         $value = $request->getCookies()->getValue($this->identityCookie['name']);
         if ($value === null) {
             return;
