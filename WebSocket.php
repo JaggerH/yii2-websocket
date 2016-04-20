@@ -96,15 +96,20 @@ class WebSocket {
 		$this->say('< ' . $msg);
 		// toId, userId
 		$msg = json_decode($msg, true);
-		var_dump($msg);
+
 		$toId = $msg["toId"];
 		unset($msg["toId"]);
-		$msg["from"] = $user->id;
+
+		$msg["userId"] = $user->id;
 		$toUser = $this->getUserById($toId);
-		$this->log("--------- process -----------");
-		var_dump($toId, $this->users);
-		$this->log("--------- process -----------");
-		$this->send($toUser->socket, json_encode($msg));
+		if ($toUser) {
+			$this->log("--------- process -----------");
+			var_dump($toId, $this->users);
+			$this->log("--------- process -----------");
+			$this->send($toUser->socket, json_encode($msg));
+		} else {
+			$this->log("--------- Destination User NOT EXIST -----------");
+		}
 	}
 
 	public function send($client, $msg) {
@@ -158,6 +163,7 @@ class WebSocket {
 				return $user;
 			}
 		}
+		return false;
 	}
 
 	private function getUserById($id) {
@@ -166,6 +172,7 @@ class WebSocket {
 				return $user;
 			}
 		}
+		return false;
 	}
 	/**
 	 *@name     getHeaders
@@ -272,7 +279,8 @@ class WebSocket {
 		$this->loadCookies($cookie);
 		$user->id = \Yii::$app->user->getId();
 		$user->username = \Yii::$app->user->identity->username;
-		$this->log("******** userId: " . $user->username . " *********\n");
+		\Yii::$app->user->clearIdentity();
+		$this->log("******** userId: " . $user->username . " *********");
 		//websocket version 13
 		$acceptKey = base64_encode(sha1($key . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11', true));
 		$upgrade = "HTTP/1.1 101 Switching Protocol\r\n" .
@@ -281,7 +289,7 @@ class WebSocket {
 			"Sec-WebSocket-Accept: " . $acceptKey . "\r\n\r\n"; //必须以两个回车结尾
 		$sent = socket_write($user->socket, $upgrade, strlen($upgrade));
 		$user->handshake = true;
-		$this->log("Done handshake...");
+		$this->log("Done handshake...\n");
 		return true;
 	}
 

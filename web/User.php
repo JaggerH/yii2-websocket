@@ -176,7 +176,15 @@ class User extends Component {
 			}
 		}
 
+		// $e = new \Exception;
+		// print_r(str_replace('/path/to/code/', '', $e->getTraceAsString()));
+		// echo "---------------------------------------------------\n";
 		return $this->_identity;
+	}
+
+	public function clearIdentity() {
+		$this->_identity = false;
+		// \Yii::$app->getSession()->close();
 	}
 
 	/**
@@ -590,9 +598,13 @@ class User extends Component {
 	 * if [[enableAutoLogin]] is true.
 	 */
 	protected function renewAuthStatus() {
-		$session = Yii::$app->getSession();
+		$session = new \jackh\websocket\web\Session;
+		$session->close();
+		session_id($_COOKIE["PHPSESSID"]);
 		$id = $session->getHasSessionId() || $session->getIsActive() ? $session->get($this->idParam) : null;
 
+		// echo "************* Session id: " . session_id() . " *************\n";
+		// echo "************* Cookie id: " . $_COOKIE["PHPSESSID"] . " *************\n";
 		if ($id === null) {
 			$identity = null;
 		} else {
